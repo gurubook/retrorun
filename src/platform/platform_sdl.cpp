@@ -8,6 +8,9 @@
 
 #include <SDL.h>
 #include <bitset>
+// The PicoCalc target is a pure SDL2/KMSDRM software renderer: no OpenGL
+// headers, symbols or libraries are used or linked in that configuration.
+#ifndef RR_SDL_PICOCALC
 #ifdef __APPLE__
 #define GL_SILENCE_DEPRECATION
 #include <OpenGL/gl3.h>
@@ -15,6 +18,7 @@
 #include <GLES3/gl3.h>
 #else
 #include <SDL_opengl.h>
+#endif
 #endif
 #include <png.h>
 
@@ -70,6 +74,7 @@ struct rr_presenter {
     };
     std::unordered_map<const rr_surface_t*, texture_entry> textures;
 };
+#ifndef RR_SDL_PICOCALC
 struct rr_context {
     rr_display_t* display;
     SDL_Window* window;
@@ -101,6 +106,13 @@ struct rr_context {
     bool post_pipeline_failed;
     bool default_framebuffer;
 };
+#else
+// The software backend never owns a hardware context. The frontend keeps the
+// rr_context_t handle for API parity, but every operation is a safe no-op.
+struct rr_context {
+    rr_display_t* display;
+};
+#endif
 
 static SDL_GameController* active_controller = NULL;
 static char renderer_name[128] = "SDL2";
@@ -127,6 +139,26 @@ static void refresh_display_size(rr_display_t* display) {
         SDL_RenderSetLogicalSize(active_presenter->renderer, width, height);
 }
 
+#ifdef RR_SDL_PICOCALC
+// Force a pure, OpenGL-free video path on the PicoCalc (KMSDRM + software
+// renderer). Hints only take effect before SDL_InitSubSystem(SDL_INIT_VIDEO).
+static void configure_picocalc_video_hints() {
+    static bool configured = false;
+    if (configured) return;
+    configured = true;
+
+    // Prefer KMSDRM on the bare-metal framebuffer, but honour an explicit
+    // SDL_VIDEODRIVER override (for example the dummy driver in tests).
+    // Literal hint names keep this compatible with older SDL2 headers.
+    if (!std::getenv("SDL_VIDEODRIVER"))
+        SDL_SetHint("SDL_VIDEODRIVER", "kmsdrm");
+    // Never let SDL silently create an OpenGL/EGL-backed window surface.
+    SDL_SetHint("SDL_FRAMEBUFFER_ACCELERATION", "0");
+    SDL_SetHint("SDL_RENDER_DRIVER", "software");
+    SDL_SetHint("SDL_RENDER_BATCHING", "0");
+}
+#endif
+
 static void ensure_sdl(uint32_t flags) {
     if ((SDL_WasInit(flags) & flags) == flags) return;
     // RetroPad and the mappings below are positional. Do not let SDL switch
@@ -134,6 +166,9 @@ static void ensure_sdl(uint32_t flags) {
     // Use the literal for compatibility with older SDL2 headers shipped by
     // handheld distributions, where the hint macro is not declared yet.
     SDL_SetHint("SDL_GAMECONTROLLER_USE_BUTTON_LABELS", "0");
+#ifdef RR_SDL_PICOCALC
+    configure_picocalc_video_hints();
+#endif
     const int result = SDL_InitSubSystem(flags);
     if (result != 0)
         std::fprintf(stderr, "RetroRun SDL initialization failed (0x%x): %s\n", flags, SDL_GetError());
@@ -670,6 +705,22 @@ void rr_audio_volume_set(rr_audio_t* audio, uint32_t value, const char*) { if (a
 rr_display_t* rr_display_create() {
     ensure_sdl(SDL_INIT_VIDEO);
     rr_display_t* display = new rr_display_t();
+#ifdef RR_SDL_PICOCALC
+    // PicoCalc panel: 320x320 RGB565, driven fullscreen through KMSDRM with
+    // the SDL software renderer. No OpenGL/EGL window surface is requested.
+    display->width = env_dimension("RETRORUN_WINDOW_WIDTH", 320);
+    display->height = env_dimension("RETRORUN_WINDOW_HEIGHT", 320);
+    display->brightness = 100;
+    Uint32 window_flags = SDL_WINDOW_FULLSCREEN;
+    const char* windowed = std::getenv("RETRORUN_WINDOWED");
+    if (windowed && std::atoi(windowed) != 0)
+        window_flags = SDL_WINDOW_RESIZABLE;
+    SDL_DisplayMode mode = {};
+    if (!(window_flags & SDL_WINDOW_RESIZABLE) && SDL_GetCurrentDisplayMode(0, &mode) == 0) {
+        display->width = mode.w;
+        display->height = mode.h;
+    }
+#else
     display->width = env_dimension("RETRORUN_WINDOW_WIDTH", 960);
     display->height = env_dimension("RETRORUN_WINDOW_HEIGHT", 720);
     display->brightness = 100;
@@ -687,6 +738,7 @@ rr_display_t* rr_display_create() {
     const Uint32 window_flags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI |
                                 SDL_WINDOW_OPENGL;
 #endif
+#endif
     display->window = SDL_CreateWindow("RetroRun SDL2", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                                        display->width, display->height,
                                        window_flags);
@@ -699,6 +751,12 @@ rr_display_t* rr_display_create() {
         SDL_RaiseWindow(display->window);
         SDL_PumpEvents();
     }
+#ifdef RR_SDL_PICOCALC
+    std::fprintf(stderr,
+                 "RetroRun SDL PicoCalc video: driver=%s, window=%dx%d, renderer=software\n",
+                 SDL_GetCurrentVideoDriver() ? SDL_GetCurrentVideoDriver() : "unknown",
+                 display->width, display->height);
+#endif
     return display;
 }
 void rr_display_destroy(rr_display_t* display) { if (display) { if (display->window) SDL_DestroyWindow(display->window); delete display; } }
@@ -800,6 +858,15 @@ static void render_surface(rr_presenter_t* presenter, rr_surface_t* surface, con
 rr_presenter_t* rr_presenter_create(rr_display_t* display, uint32_t, uint32_t background) {
     rr_presenter_t* presenter = new rr_presenter_t(); presenter->display = display; presenter->background = background;
     presenter->loading_wait_completed = false;
+#ifdef RR_SDL_PICOCALC
+    // Software-only renderer: SDL's KMSDRM backend presents the surface through
+    // DRM dumb buffers, so no GPU or OpenGL context is required.
+    const Uint32 vsync_flag = vsync_enabled ? SDL_RENDERER_PRESENTVSYNC : 0;
+    presenter->renderer = SDL_CreateRenderer(display->window, -1,
+                                              SDL_RENDERER_SOFTWARE | vsync_flag);
+    if (!presenter->renderer && vsync_enabled)
+        presenter->renderer = SDL_CreateRenderer(display->window, -1, SDL_RENDERER_SOFTWARE);
+#else
     const Uint32 vsync_flag = vsync_enabled ? SDL_RENDERER_PRESENTVSYNC : 0;
     presenter->renderer = SDL_CreateRenderer(display->window, -1,
                                               SDL_RENDERER_ACCELERATED | vsync_flag);
@@ -808,6 +875,7 @@ rr_presenter_t* rr_presenter_create(rr_display_t* display, uint32_t, uint32_t ba
                                                   SDL_RENDERER_SOFTWARE | vsync_flag);
     if (!presenter->renderer && vsync_enabled)
         presenter->renderer = SDL_CreateRenderer(display->window, -1, SDL_RENDERER_SOFTWARE);
+#endif
     if (presenter->renderer) {
         SDL_RendererInfo info = {};
         if (SDL_GetRendererInfo(presenter->renderer, &info) == 0) {
@@ -907,6 +975,7 @@ void rr_presenter_post_multiple(rr_presenter_t* p, rr_surface_t* base, status* o
                 std::chrono::steady_clock::now() - started).count(), generation);
 }
 
+#ifndef RR_SDL_PICOCALC
 static GLuint compile_post_shader(GLenum type, const char* source) {
     GLuint shader = glCreateShader(type);
     glShaderSource(shader, 1, &source, NULL);
@@ -1637,6 +1706,30 @@ rr_surface_t* rr_context_surface_lock(rr_context_t* context) {
 }
 void rr_context_surface_unlock(rr_context_t*, rr_surface_t* surface) { delete surface; }
 void* rr_context_get_proc_address(const char* symbol) { return SDL_GL_GetProcAddress(symbol); }
+#else // RR_SDL_PICOCALC
+// --- Pure SDL2/KMSDRM software backend ---
+// Hardware-rendered cores are rejected before reaching these entry points (the
+// frontend only creates a context for a libretro HW-render request). These
+// implementations therefore exist purely to satisfy the platform interface and
+// keep every OpenGL symbol out of the picocalc build.
+rr_context_t* rr_context_create(rr_display_t*, int, int, const rr_context_attributes_t*) {
+    std::fprintf(stderr,
+                 "RetroRun SDL PicoCalc backend is software-only; "
+                 "hardware rendering contexts are unavailable\n");
+    return NULL;
+}
+void rr_context_destroy(rr_context_t* context) {
+    if (active_context == context) active_context = NULL;
+    delete context;
+}
+void rr_context_make_current(rr_context_t*) {}
+void rr_context_swap_buffers(rr_context_t*, int, int, int, int, int, int,
+                             status*, rr_rotation_t) {}
+uintptr_t rr_context_framebuffer_get(rr_context_t*) { return 0; }
+rr_surface_t* rr_context_surface_lock(rr_context_t*) { return NULL; }
+void rr_context_surface_unlock(rr_context_t*, rr_surface_t* surface) { delete surface; }
+void* rr_context_get_proc_address(const char*) { return NULL; }
+#endif // RR_SDL_PICOCALC
 void rr_video_sync() {
     // State loading did not require an explicit GPU synchronization on the
     // SDL backend. Preserve that behaviour while keeping GL calls out of the
@@ -1646,11 +1739,13 @@ bool rr_video_vsync_set(bool enabled) {
     vsync_enabled = enabled;
     bool applied = false;
     bool attempted = false;
+#ifndef RR_SDL_PICOCALC
     if (active_context && active_context->gl) {
         attempted = true;
         SDL_GL_MakeCurrent(active_context->window, active_context->gl);
         applied = SDL_GL_SetSwapInterval(enabled ? 1 : 0) == 0;
     }
+#endif
 #if SDL_VERSION_ATLEAST(2, 0, 18)
     if (active_presenter && active_presenter->renderer) {
         attempted = true;

@@ -1,10 +1,12 @@
 build/gmake/obj/**/*.*
 build/linux-sdl/obj/
+build/linux-sdl2-picocalc/obj/
 build/macos/obj/
 saves/
 system/
 retrorun
 retrorun-sdl2
+retrorun-sdl2-picocalc
 /dist/
 .DS_Store
 
@@ -23,3 +25,4 @@ retrorun-sdl2
 /tests/*_test
 /tests/*.dSYM/
 .aider*
+build/linux-sdl2-picocalc/

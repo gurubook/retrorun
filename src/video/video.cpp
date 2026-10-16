@@ -77,7 +77,13 @@ extern int opt_backlight;
 
 
 // float aspect_ratio;
+#ifdef RR_SDL_PICOCALC
+// The PicoCalc panel is RGB565; use it as the default when a core does not
+// call RETRO_ENVIRONMENT_SET_PIXEL_FORMAT.
+uint32_t color_format = RR_PIXEL_FORMAT_RGB565;
+#else
 uint32_t color_format;
+#endif
 
 
 int GLContextMajor = 0;

@@ -323,6 +323,10 @@ bool core_environment(unsigned cmd, void *data)
     {
 #ifdef RR_PLATFORM_SDL
         unsigned int *preferred = static_cast<unsigned int *>(data);
+#ifdef RR_SDL_PICOCALC
+        *preferred = RETRO_HW_CONTEXT_NONE;
+        logger.log(Logger::DEB, "PicoCalc SDL renderer preference: software");
+#else
         if (sdlVideoRenderer == SDLVideoRenderer::Software) {
             *preferred = RETRO_HW_CONTEXT_NONE;
             logger.log(Logger::DEB, "SDL renderer preference: software");
@@ -338,6 +342,7 @@ bool core_environment(unsigned cmd, void *data)
             logger.log(Logger::DEB, "SDL renderer preference: OpenGL Core");
 #endif
         }
+#endif
         return true;
 #else
         logger.log(Logger::DEB, "RETRO_ENVIRONMENT_SET_PIXEL_FORMAT: preferred OPENGLES3");
@@ -351,6 +356,12 @@ bool core_environment(unsigned cmd, void *data)
     {
 #ifdef RR_PLATFORM_SDL
         retro_hw_render_callback *hw = static_cast<retro_hw_render_callback *>(data);
+#ifdef RR_SDL_PICOCALC
+        logger.log(Logger::WARN,
+                   "PicoCalc SDL backend is software-only; rejecting hardware context type %d",
+                   hw->context_type);
+        return false;
+#endif
         if (sdlVideoRenderer == SDLVideoRenderer::Software) {
             logger.log(Logger::WARN, "SDL software renderer selected; rejecting hardware context type %d", hw->context_type);
             return false;

@@ -36,7 +36,12 @@ static const char *ws = " \t\n\r\f\v";
 std::string activeConfigFile;
 
 #ifdef RR_PLATFORM_SDL
+#ifdef RR_SDL_PICOCALC
+// The PicoCalc backend is software-only; never default to a hardware renderer.
+SDLVideoRenderer sdlVideoRenderer = SDLVideoRenderer::Software;
+#else
 SDLVideoRenderer sdlVideoRenderer = SDLVideoRenderer::Auto;
+#endif
 bool sdlVsync = false;
 const char *opt_setting_file = "./retrorun.cfg";
 #else
