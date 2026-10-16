@@ -25,4 +25,3 @@ retrorun-sdl2-picocalc
 /tests/*_test
 /tests/*.dSYM/
 .aider*
-build/linux-sdl2-picocalc/
