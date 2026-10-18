@@ -6,7 +6,7 @@ TARGET := $(ROOT)/retrorun-sdl2-picocalc
 # PicoCalc target: SDL2 video/output is provided by the KMSDRM driver and the
 # software renderer. No EGL, GLES, Vulkan or any other OpenGL dependency is
 # used or linked here.
-SDL_CONFIG ?= sdl2-config
+SDL_CONFIG ?= pkg-config sdl2
 PKG_CONFIG ?= pkg-config
 SDL_CFLAGS ?= $(shell $(SDL_CONFIG) --cflags)
 SDL_LIBS ?= $(shell $(SDL_CONFIG) --libs)
