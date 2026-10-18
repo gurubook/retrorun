@@ -1406,7 +1406,7 @@ int main(int argc, char *argv[])
         // frame start for optional profiling and begin measuring on the next
         // complete fast-forward frame.
         const bool profileFastForwardFrame = input_ffwd_requested;
-#ifndef RR_PLATFORM_SDL
+#if !defined(RR_PLATFORM_SDL) || defined(RR_SDL_PICOCALC)
         // Timing the loop is useful only to adaptive frameskip. Avoid an
         // otherwise unnecessary clock read on every frame when it is off.
         const bool measureAdaptiveLoop = adaptiveFrameSkip &&
@@ -1585,7 +1585,7 @@ int main(int argc, char *argv[])
             input_slot_memory_minus_requested = false;
         }
 
-#ifndef RR_PLATFORM_SDL
+#if !defined(RR_PLATFORM_SDL) || defined(RR_SDL_PICOCALC)
         const nanoseconds frameDurationNs = duration_cast<nanoseconds>(frameDuration);
 
         static nanoseconds frameDebt = nanoseconds::zero();
