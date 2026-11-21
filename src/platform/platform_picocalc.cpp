@@ -304,10 +304,10 @@ void rr_input_state_read(rr_input_t* input, rr_input_state_t* state) {
     set_key(state, keys, SDL_SCANCODE_DOWN, RRInputButton_DPadDown);
     set_key(state, keys, SDL_SCANCODE_LEFT, RRInputButton_DPadLeft);
     set_key(state, keys, SDL_SCANCODE_RIGHT, RRInputButton_DPadRight);
-    set_key(state, keys, SDL_SCANCODE_X, RRInputButton_A);
-    set_key(state, keys, SDL_SCANCODE_Z, RRInputButton_B);
-    set_key(state, keys, SDL_SCANCODE_S, RRInputButton_X);
-    set_key(state, keys, SDL_SCANCODE_A, RRInputButton_Y);
+    set_key(state, keys, SDL_SCANCODE_F5, RRInputButton_A);
+    set_key(state, keys, SDL_SCANCODE_F4, RRInputButton_B);
+    set_key(state, keys, SDL_SCANCODE_F3, RRInputButton_X);
+    set_key(state, keys, SDL_SCANCODE_F2, RRInputButton_Y);
     set_key(state, keys, SDL_SCANCODE_BACKSPACE, RRInputButton_SELECT);
     set_key(state, keys, SDL_SCANCODE_RETURN, RRInputButton_START);
     set_key(state, keys, SDL_SCANCODE_Q, RRInputButton_TopLeft);
@@ -1224,8 +1224,8 @@ static bool is_frontend_hotkey(SDL_Scancode sc) {
     switch (sc) {
     case SDL_SCANCODE_UP: case SDL_SCANCODE_DOWN:
     case SDL_SCANCODE_LEFT: case SDL_SCANCODE_RIGHT:
-    case SDL_SCANCODE_X: case SDL_SCANCODE_Z:
-    case SDL_SCANCODE_S: case SDL_SCANCODE_A:
+    case SDL_SCANCODE_F5: case SDL_SCANCODE_F4:
+    case SDL_SCANCODE_F3: case SDL_SCANCODE_F2:
     case SDL_SCANCODE_BACKSPACE: case SDL_SCANCODE_RETURN:
     case SDL_SCANCODE_Q: case SDL_SCANCODE_W:
     case SDL_SCANCODE_1: case SDL_SCANCODE_2:

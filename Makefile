@@ -136,7 +136,7 @@ help:
 	@echo "   retrorun"
 	@echo "   macos-sdl2  macOS with the SDL2/OpenGL backend"
 	@echo "   linux-sdl2  Linux with the SDL2/KMSDRM/OpenGL ES backend"
-	@echo "   linux-sdl2-picocalc  Linux/PicoCalc SDL2/KMSDRM software backend (320x320 RGB565, no OpenGL)"
+	@echo "   linux-sdl2-picocalc  Linux/PicoCalc SDL2/FB software backend (320x320 RGB565, no OpenGL)"
 	@echo "   linux-go2   Linux handhelds with the native GO2/DRM backend"
 	@echo "   linux-go2-hybrid  GO2 video/input with runtime-selectable GO2/SDL2 audio"
 	@echo "   test        Run isolated benchmark/audio worker tests"

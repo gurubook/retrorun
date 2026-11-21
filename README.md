@@ -25,6 +25,7 @@ See [changelog.txt](changelog.txt) for release history.
 | Supported Linux handhelds | Native GO2/DRM | `retrorun` |
 | Linux handhelds and desktops | SDL2 + OpenGL ES | `retrorun-sdl2` |
 | macOS | SDL2 + Desktop OpenGL | `retrorun` |
+| Picocalc LuckFox Lyra on Calculinux | SDL2 FB/M0 Audio | `retrorun-sdl2-picocalc` |   
 
 The native backend supports Anbernic RG351M, RG351P, RG351V, RG351MP,
 RG552, RG503, RG353M, RG353V and RG ARC-D, plus Miniloong Pocket 1.
