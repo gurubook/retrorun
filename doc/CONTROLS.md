@@ -36,6 +36,17 @@ to the emulated game.
 With `retrorun_alternative_input_mode = true`, Select or F2 is used with X to
 open the menu, Y for FPS, B for screenshots, A for pause and Start for exit.
 
+## Picocalc keyboard controls
+| Keyboard | RetroPad control |
+| --- | --- |
+| Arrow keys | D-pad |
+| `F5`, `F4`, `F3`, `F2` | A, B, X, Y |
+| Return, Backspace | Start, Select |
+| `Q`, `W` | L1, R1 |
+| `1`, `2` | L2, R2 |
+| `3`, `4` | L3, R3 |
+| Escape or window close | Quit |
+
 ## SDL controller databases
 
 SDL controller databases are loaded from the standard distribution locations,
