@@ -9,6 +9,7 @@
 | Anbernic Linux, default | Native GO2/DRM | `make config=release` | `retrorun` |
 | Linux handheld or desktop | SDL2 + OpenGL ES | `make sdl2 config=release` | `retrorun-sdl2` |
 | macOS | SDL2 + Desktop OpenGL | `make` | `retrorun` |
+| Picocalc | SDL2 + Software rendering | `make linux-sdl2-picocalc config=release` | `retrorun-sdl2-picocalc`
 
 On Linux, the GO2 backend intentionally remains the default for compatibility
 with existing AmberELEC packages and supported Anbernic devices. Building the

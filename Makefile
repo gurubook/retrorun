@@ -11,7 +11,7 @@ PLATFORM ?= auto
 
 PROJECTS := retrorun
 
-.PHONY: all build clean help test test-asan test-tsan macos macos-sdl2 linux-sdl2 linux-go2 linux-go2-hybrid sdl2 go2 hybrid $(PROJECTS)
+.PHONY: all build clean help test test-asan test-tsan macos macos-sdl2 linux-sdl2 linux-sdl2-picocalc linux-go2 linux-go2-hybrid sdl2 picocalc go2 hybrid $(PROJECTS)
 
 # Run a sub-build, preserve its exit status, and always report the elapsed time.
 # Usage: $(call timed_build,<make arguments>)
@@ -41,6 +41,13 @@ retrorun:
 
 clean:
 	@${MAKE} --no-print-directory -C build/linux-sdl -f Makefile clean
+else ifneq ($(filter $(PLATFORM),linux-sdl2-picocalc picocalc),)
+retrorun:
+	@echo "==== Building retrorun SDL2 software renderer for PicoCalc (KMSDRM/RGB565) ===="
+	$(call timed_build,-C build/linux-sdl2-picocalc -f Makefile config=$(config))
+
+clean:
+	@${MAKE} --no-print-directory -C build/linux-sdl2-picocalc -f Makefile clean
 else ifneq ($(filter $(PLATFORM),linux-go2-hybrid hybrid),)
 retrorun:
 	@echo "==== Building retrorun hybrid (GO2 platform, selectable GO2/SDL2 audio) ===="
@@ -84,6 +91,9 @@ macos-sdl2:
 linux-sdl2:
 	@${MAKE} --no-print-directory PLATFORM=linux-sdl2 config=$(config) retrorun
 
+linux-sdl2-picocalc:
+	@${MAKE} --no-print-directory PLATFORM=linux-sdl2-picocalc config=$(config) retrorun
+
 linux-go2:
 	@${MAKE} --no-print-directory PLATFORM=linux-go2 config=$(config) retrorun
 
@@ -95,6 +105,8 @@ linux-go2-hybrid:
 macos: macos-sdl2
 
 sdl2: linux-sdl2
+
+picocalc: linux-sdl2-picocalc
 
 go2: linux-go2
 
@@ -124,6 +136,7 @@ help:
 	@echo "   retrorun"
 	@echo "   macos-sdl2  macOS with the SDL2/OpenGL backend"
 	@echo "   linux-sdl2  Linux with the SDL2/KMSDRM/OpenGL ES backend"
+	@echo "   linux-sdl2-picocalc  Linux/PicoCalc SDL2/KMSDRM software backend (320x320 RGB565, no OpenGL)"
 	@echo "   linux-go2   Linux handhelds with the native GO2/DRM backend"
 	@echo "   linux-go2-hybrid  GO2 video/input with runtime-selectable GO2/SDL2 audio"
 	@echo "   test        Run isolated benchmark/audio worker tests"
@@ -133,6 +146,7 @@ help:
 	@echo "COMPATIBILITY ALIASES:"
 	@echo "   macos       Alias for macos-sdl2"
 	@echo "   sdl2        Alias for linux-sdl2"
+	@echo "   picocalc    Alias for linux-sdl2-picocalc"
 	@echo "   go2         Alias for linux-go2"
 	@echo "   hybrid      Alias for linux-go2-hybrid"
 	@echo ""
