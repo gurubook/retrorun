@@ -576,6 +576,9 @@ void initConfig()
     {
         std::string homedir_str(homedir);
         config_file = homedir_str + "/.config/retrorun.cfg";
+        if (!fileExists(config_file.c_str())) {
+            std::ofstream output(config_file);
+        }
         logger.log(Logger::INF, "Using default configuration file: '%s'", config_file.c_str());
     }
     else
