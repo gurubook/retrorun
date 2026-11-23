@@ -38,17 +38,33 @@ static const char *ws = " \t\n\r\f\v";
 std::string activeConfigFile;
 
 #ifdef RR_PLATFORM_SDL
+
 #ifdef RR_SDL_PICOCALC
 // The PicoCalc backend is software-only; never default to a hardware renderer.
 SDLVideoRenderer sdlVideoRenderer = SDLVideoRenderer::Software;
-#else
+bool sdlVsync = false;
+
+// fetch homedir
+const char *homedir;
+if ((homedir = getenv("HOME")) == NULL) {
+    homedir = getpwuid(getuid())->pw_dir;
+}
+
+const char *opt_setting_file = (char*)malloc(100);
+// on Picocalc config are in $HOME/.config
+snprintf(opt_setting_file, sizeof(opt_setting_file), "%s/.config/retrorun/retrorun.cfg", 
+         homedir);
+
+#else // RR_PLATFORM_SDL
 SDLVideoRenderer sdlVideoRenderer = SDLVideoRenderer::Auto;
-#endif
 bool sdlVsync = false;
 const char *opt_setting_file = "./retrorun.cfg";
-#else
+#endif
+
+#else // NOT SDL
 const char *opt_setting_file = "/storage/.config/distribution/configs/retrorun.cfg";
 #endif
+
 bool opt_setting_file_explicit = false;
 
 bool opt_show_fps = false;
