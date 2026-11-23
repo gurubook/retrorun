@@ -45,8 +45,8 @@ bool sdlVsync = false;
 #else // RR_PLATFORM_SDL
 SDLVideoRenderer sdlVideoRenderer = SDLVideoRenderer::Auto;
 bool sdlVsync = false;
-const char *opt_setting_file = "./retrorun.cfg";
 #endif
+const char *opt_setting_file = "./retrorun.cfg";
 
 #else // NOT SDL
 const char *opt_setting_file = "/storage/.config/distribution/configs/retrorun.cfg";
