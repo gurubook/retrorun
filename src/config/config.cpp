@@ -38,23 +38,10 @@ static const char *ws = " \t\n\r\f\v";
 std::string activeConfigFile;
 
 #ifdef RR_PLATFORM_SDL
-
 #ifdef RR_SDL_PICOCALC
 // The PicoCalc backend is software-only; never default to a hardware renderer.
 SDLVideoRenderer sdlVideoRenderer = SDLVideoRenderer::Software;
 bool sdlVsync = false;
-
-// fetch homedir
-const char *homedir;
-if ((homedir = getenv("HOME")) == NULL) {
-    homedir = getpwuid(getuid())->pw_dir;
-}
-
-const char *opt_setting_file = (char*)malloc(100);
-// on Picocalc config are in $HOME/.config
-snprintf(opt_setting_file, sizeof(opt_setting_file), "%s/.config/retrorun/retrorun.cfg", 
-         homedir);
-
 #else // RR_PLATFORM_SDL
 SDLVideoRenderer sdlVideoRenderer = SDLVideoRenderer::Auto;
 bool sdlVsync = false;
@@ -568,6 +555,9 @@ bool persistVideoSetting(const std::string &setting, const std::string &value)
 void initConfig()
 {
     logger.log(Logger::INF, "Searching config file... ");
+    
+    // fetch homedir from environment variable $HOME
+    char *homedir = getenv("HOME");
 
     std::string config_file;
     if (opt_setting_file_explicit)
@@ -581,6 +571,12 @@ void initConfig()
     {
         config_file = "retrorun.cfg";
         logger.log(Logger::INF, "Using local configuration file: '%s'", config_file.c_str());
+    } 
+    else if (homedir != NULL)
+    {
+        std::string homedir_str(homedir);
+        config_file = homedir_str + "/.config/retrorun/retrorun.cfg";
+        logger.log(Logger::INF, "Using default configuration file: '%s'", config_file.c_str());
     }
     else
     {
